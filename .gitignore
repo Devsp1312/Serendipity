@@ -1,0 +1,39 @@
+# Model files - too large for GitHub
+models/
+model/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Audio and large media files
+Audio files/
+*.mp3
+*.wav
+*.m4a
+*.flac
+
+# Large data files
+*.json
+*.html
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
