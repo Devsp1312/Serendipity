@@ -2,10 +2,11 @@
 
 A fully local audio analysis pipeline that transcribes any audio file and tells you:
 
-- 🎙️ **Audio emotion** — what emotion comes through in the speaker's tone of voice
+- 🔊 **Audio emotion** — what emotion comes through in the speaker's tone of voice
 - 💬 **Text emotion** — what emotions are in the actual words (27 labels)
 - 👍 **Likes & dislikes** — what the speaker is positive or negative about
 - 🧠 **Person type** — what kind of person the speaker likely is
+- 🧩 **Profiles** — 19 deep character metrics built across multiple sessions
 
 Everything runs on your machine. No API keys, no internet connection needed after setup, no data leaves your device.
 
@@ -25,6 +26,7 @@ Everything runs on your machine. No API keys, no internet connection needed afte
 ```bash
 git clone https://github.com/your-username/serendipity.git
 cd serendipity
+git submodule update --init
 ```
 
 **2. Install Stage 1 dependencies** (transcription)
@@ -54,15 +56,16 @@ python stage2/download_models.py
 ### Web UI (recommended)
 
 ```bash
-python stage2/app.py
+python3 stage2/app.py
 ```
 
 Then open **http://localhost:5000** in your browser.
 
 - Drop audio files into the `Audio files/` folder
 - Click a file in the sidebar to select it
-- Click **Analyse** to run the full pipeline
-- Watch live progress and view the report when done
+- Click **Run Analysis** to run the full pipeline
+- Watch live step-by-step progress and view the report when done
+- Click **Add to Profile** to track the speaker over time
 
 ### Command line
 
@@ -97,6 +100,7 @@ Serendipity/
 ├── Text files/           ← transcripts saved here (.txt + .segments.json)
 ├── JSON files/           ← analysis output saved here (.json)
 ├── Reports/              ← HTML visual reports saved here
+├── Profiles/             ← speaker profiles saved here (.json)
 │
 ├── stage1/
 │   ├── transcribe.py         ← transcribe audio → text
@@ -105,13 +109,18 @@ Serendipity/
 │   └── model/                ← Whisper model cache (created on download)
 │
 └── stage2/
-    ├── app.py                ← web UI (Flask)
+    ├── app.py                ← web UI (Flask) + SSE pipeline streaming
     ├── analyse.py            ← command-line analysis
+    ├── audio_emotion.py      ← tone-of-voice emotion detection
+    ├── text_emotion.py       ← word-level emotion detection (27 labels)
+    ├── likes_dislikes.py     ← sentiment-based topic extraction
+    ├── person_type.py        ← zero-shot personality classification
+    ├── profiles.py           ← long-term speaker profiles (19 metrics)
     ├── visualise.py          ← generate HTML report from JSON
     ├── download_models.py    ← download all analysis models
     ├── requirements.txt
     ├── templates/
-    │   └── index.html        ← web UI frontend
+    │   └── index.html        ← web UI frontend (dark theme)
     └── models/               ← analysis model cache (created on download)
         ├── wav2vec2-emotion/
         ├── text-emotion/
@@ -126,12 +135,41 @@ Serendipity/
 | Step | What happens |
 |------|-------------|
 | 1 | **Transcription** — Faster-Whisper converts speech to timestamped text segments |
-| 2 | **Audio emotion** — wav2vec2 reads the audio signal to detect tone of voice |
+| 2 | **Audio emotion** — wav2vec2 reads the raw audio signal to detect tone of voice |
 | 3 | **Text emotion** — BERT (GoEmotions) classifies 27 emotions from the words |
 | 4 | **Likes / dislikes** — DistilBERT sentiment model finds positive/negative topics |
 | 5 | **Person type** — Zero-shot NLI model classifies what kind of person the speaker is |
 
 All models run locally on CPU. A GPU is used automatically if available (MPS on Apple Silicon, CUDA on NVIDIA).
+
+Stage 1 output is cached — re-running analysis on the same file skips transcription and loads instantly.
+
+---
+
+## Profiles
+
+After analysing one or more audio files, click **Add to Profile** in the report to build a long-term speaker profile. Each profile scores the speaker on 19 behavioural metrics across 4 phases:
+
+| Phase | Metrics |
+|-------|---------|
+| **Surface** — what's immediately visible | Economic Utility, Institutional Accreditation, Network Density, Attention Capture |
+| **Resource** — what they control | Asset Accumulation, Time Sovereignty, Information Asymmetry, Scarcity, Generational Legacy |
+| **Behavioral** — how they act | Risk Tolerance, Reliability, Social Proof, Moral Signaling, Cultural Compliance |
+| **Deep Core** — who they are | Emotional Intelligence, Creative Agency, Resilience, Tribal Loyalty, Transcendence |
+
+Scores are computed using zero-shot NLI, optionally blended with emotion signal from the audio and text models. Profiles update automatically each time a new session is added.
+
+---
+
+## Web UI
+
+The web interface runs as a local Flask app with a full dark theme. Key features:
+
+- **Live progress** — each pipeline step streams in real-time via Server-Sent Events (SSE), with a per-step elapsed timer
+- **SSE heartbeat** — a ping event is sent every 15 s to keep the connection alive during long model loads
+- **Inline profile creation** — click `+` in the sidebar to create a profile without any dialogs
+- **Inline delete confirmation** — profile deletion shows an in-page confirm row instead of a browser dialog
+- **Scroll-to-top** — the view always resets when switching between files or profiles
 
 ---
 
@@ -143,4 +181,4 @@ All models run locally on CPU. A GPU is used automatically if available (MPS on 
 | `ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition` | Audio emotion | ~1.2 GB |
 | `monologg/bert-base-cased-goemotions-original` | Text emotion (27 labels) | ~400 MB |
 | `distilbert-base-uncased-finetuned-sst-2-english` | Sentiment / likes & dislikes | ~67 MB |
-| `typeform/distilbert-base-uncased-mnli` | Person type (zero-shot) | ~255 MB |
+| `typeform/distilbert-base-uncased-mnli` | Person type + profile metrics (zero-shot) | ~255 MB |
