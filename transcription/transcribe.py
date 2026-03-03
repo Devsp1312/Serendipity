@@ -7,6 +7,7 @@ Saves two output files to the Text files folder:
 The model is downloaded automatically on first run and cached locally.
 Run download_model.py first if you want to pre-download it.
 """
+from __future__ import annotations
 
 import json
 import sys
@@ -16,9 +17,9 @@ from typing import Optional
 
 from faster_whisper import WhisperModel
 
-AUDIO_DIR  = Path(__file__).parent.parent / "Audio files"
-TEXT_DIR   = Path(__file__).parent.parent / "Text files"
-MODEL_PATH = Path(__file__).parent / "model"
+AUDIO_DIR  = Path(__file__).parent.parent / "data" / "audio"
+TEXT_DIR   = Path(__file__).parent.parent / "data" / "transcripts"
+MODEL_PATH = Path(__file__).parent.parent / "models" / "whisper"
 MODEL_SIZE = "small"  # tiny | base | small | medium | large-v3
 
 

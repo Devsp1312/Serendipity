@@ -9,7 +9,7 @@ from pathlib import Path
 from faster_whisper import WhisperModel
 
 MODEL_SIZE = "small"  # must match MODEL_SIZE in transcribe.py
-MODEL_PATH = Path(__file__).parent / "model"
+MODEL_PATH = Path(__file__).parent.parent / "models" / "whisper"
 
 # Remove old model folder if it exists
 if MODEL_PATH.exists():

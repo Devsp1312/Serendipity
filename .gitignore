@@ -1,21 +1,21 @@
 # Model files - too large for GitHub
 models/
-model/
 *.safetensors
 *.bin
 *.pt
 *.pth
 
 # Audio and large media files
-Audio files/
+data/audio/
 *.mp3
 *.wav
 *.m4a
 *.flac
 
-# Large data files
-*.json
-*.html
+# Generated data files (reports, segments, profiles)
+data/reports/
+data/profiles/
+data/transcripts/*.json
 
 # Python cache
 __pycache__/
@@ -37,3 +37,6 @@ env/
 .idea/
 *.swp
 *.swo
+
+# macOS
+.DS_Store
