@@ -1,0 +1,6 @@
+faster-whisper
+torch
+transformers
+av
+flask
+psutil

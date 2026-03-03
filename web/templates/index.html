@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serendipity</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #080d1a;
+      --sidebar-bg:  #05080f;
+      --surface:     #0d1526;
+      --surface-2:   #162035;
+      --border:      #1a2d47;
+      --border-2:    #243a56;
+      --primary:     #818cf8;
+      --primary-dim: #1e1b4b;
+      --primary-bg:  #312e81;
+      --success:     #34d399;
+      --success-bg:  #022c22;
+      --danger:      #f87171;
+      --danger-bg:   #450a0a;
+      --text:        #e2e8f0;
+      --muted:       #4a6080;
+      --muted-2:     #7a95b0;
+      --radius:      13px;
+
+      /* Phase accent colours */
+      --ph1: #f59e0b;
+      --ph2: #3b82f6;
+      --ph3: #a78bfa;
+      --ph4: #34d399;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0a0f20 0%, #110d30 100%);
+      color: #e2e8f0;
+      padding: 0 20px;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      border-bottom: 1px solid #1a2540;
+      position: relative;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, #818cf840, #a78bfa40, transparent);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.3px;
+    }
+    .logo-gem {
+      color: #818cf8;
+      font-size: 1.15rem;
+      filter: drop-shadow(0 0 6px #818cf860);
+    }
+    .logo-text { color: #e2e8f0; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .header-tag {
+      font-size: 0.72rem;
+      color: var(--muted-2);
+      background: #162035;
+      padding: 3px 9px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      letter-spacing: 0.3px;
+    }
+    .status-dot-wrap { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted-2); }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+    .status-dot.busy {
+      background: #fb923c;
+      box-shadow: 0 0 6px #fb923c;
+      animation: pulse-dot 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.8); }
+    }
+    #status-label { transition: color 0.3s; }
+
+    /* ── Layout ─────────────────────────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ────────────────────────────────────────────────────────────── */
+    aside {
+      width: 260px;
+      background: var(--sidebar-bg);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .sidebar-section { display: flex; flex-direction: column; min-height: 0; }
+    .sidebar-section.files { flex: 1; min-height: 120px; }
+    .sidebar-section.profs { flex-shrink: 0; max-height: 240px; }
+
+    .sidebar-label {
+      padding: 12px 16px 7px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .sidebar-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 2px 0;
+      flex-shrink: 0;
+    }
+    .btn-sidebar-add {
+      background: none;
+      border: 1px solid var(--border-2);
+      color: var(--muted);
+      border-radius: 5px;
+      width: 20px; height: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-sidebar-add:hover { background: var(--surface-2); color: var(--text); border-color: var(--primary); }
+
+    /* Inline new-profile form in sidebar */
+    .sidebar-new-profile {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.25s ease, opacity 0.2s;
+      opacity: 0;
+    }
+    .sidebar-new-profile.open { max-height: 56px; opacity: 1; }
+    .sidebar-new-profile-inner {
+      display: flex;
+      gap: 6px;
+      padding: 6px 8px 8px;
+    }
+    .sidebar-new-profile-inner input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      color: var(--text);
+      font-size: 0.82rem;
+      padding: 6px 10px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .sidebar-new-profile-inner input:focus { border-color: var(--primary); }
+    .sidebar-new-profile-inner input::placeholder { color: var(--muted); }
+    .btn-sidebar-confirm {
+      background: var(--primary-bg);
+      border: none;
+      border-radius: 7px;
+      color: var(--primary);
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-sidebar-confirm:hover { background: #4338ca; color: #fff; }
+
+    .file-list, .profile-list {
+      overflow-y: auto;
+      padding: 4px 8px;
+      list-style: none;
+    }
+    .file-list   { flex: 1; }
+    .profile-list { flex: 1; }
+    .file-list::-webkit-scrollbar,
+    .profile-list::-webkit-scrollbar { width: 3px; }
+    .file-list::-webkit-scrollbar-thumb,
+    .profile-list::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+    .file-item, .profile-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--muted-2);
+      font-size: 0.84rem;
+      transition: background 0.12s, color 0.12s;
+      user-select: none;
+    }
+    .file-item:hover,    .profile-item:hover  { background: var(--surface); color: #c8d6e8; }
+    .file-item.active,   .profile-item.active {
+      background: linear-gradient(135deg, #1e1b4b, #12172e);
+      color: #a5b4fc;
+      border: 1px solid #312e81;
+    }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-none  { background: var(--muted); }
+    .dot-trans { background: #60a5fa; box-shadow: 0 0 4px #60a5fa60; }
+    .dot-done  { background: var(--success); box-shadow: 0 0 4px #34d39960; }
+    .dot-prof  { background: var(--primary); box-shadow: 0 0 4px #818cf860; }
+
+    .file-name, .profile-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-size  { font-size: 0.7rem; color: var(--muted); flex-shrink: 0; }
+    .profile-badge {
+      font-size: 0.65rem; font-weight: 600;
+      background: var(--primary-dim);
+      color: var(--primary);
+      border-radius: 99px;
+      padding: 1px 6px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn {
+      padding: 9px 16px;
+      border-radius: 9px;
+      border: none;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      box-shadow: 0 2px 12px #4f46e540;
+    }
+    .btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, #4338ca, #6d28d9); box-shadow: 0 4px 16px #4f46e560; }
+    .btn-primary:disabled { background: #1e1b4b; color: #4a3f8a; cursor: not-allowed; box-shadow: none; }
+    .btn-icon {
+      background: var(--surface);
+      color: var(--muted-2);
+      border: 1px solid var(--border);
+      padding: 9px 12px;
+    }
+    .btn-icon:hover { background: var(--surface-2); color: var(--text); }
+    .btn-sm { padding: 6px 13px; font-size: 0.8rem; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border-2);
+      color: var(--muted-2);
+    }
+    .btn-outline:hover { background: var(--surface-2); color: var(--text); border-color: var(--muted); }
+    .btn-danger-outline {
+      background: transparent;
+      border: 1px solid #7f1d1d;
+      color: var(--danger);
+    }
+    .btn-danger-outline:hover { background: var(--danger-bg); }
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid #7f1d1d;
+    }
+    .btn-danger:hover { background: #5f0000; }
+
+    /* ── Main content ───────────────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 32px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-2) transparent;
+    }
+    main::-webkit-scrollbar { width: 5px; }
+    main::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 3px; }
+
+    /* ── Welcome state ──────────────────────────────────────────────────────── */
+    .welcome-state {
+      max-width: 720px;
+      margin: 0 auto;
+      padding-top: 16px;
+      animation: fadeUp 0.4s ease;
+    }
+    .welcome-hero {
+      text-align: center;
+      margin-bottom: 36px;
+      padding: 32px 20px;
+    }
+    .welcome-gem {
+      font-size: 2.6rem;
+      display: block;
+      filter: drop-shadow(0 0 20px #818cf860);
+      margin-bottom: 12px;
+    }
+    .welcome-title {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #818cf8, #c084fc, #818cf8);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 4s linear infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+    .welcome-tag {
+      font-size: 0.96rem;
+      color: var(--muted-2);
+      margin-top: 8px;
+      font-weight: 400;
+    }
+
+    .welcome-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .welcome-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+    }
+    .welcome-card-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted-2);
+      margin-bottom: 14px;
+    }
+    .welcome-steps {
+      padding-left: 18px;
+      color: var(--text);
+      font-size: 0.87rem;
+    }
+    .welcome-steps li { margin-bottom: 7px; line-height: 1.5; color: #a8bdd4; }
+    .welcome-steps li code {
+      background: var(--primary-dim);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.81rem;
+      color: var(--primary);
+    }
+    .welcome-learns { list-style: none; }
+    .welcome-learns li {
+      font-size: 0.87rem;
+      padding: 6px 0;
+      line-height: 1.4;
+      border-bottom: 1px solid var(--border);
+      color: #a8bdd4;
+    }
+    .welcome-learns li:last-child { border-bottom: none; }
+
+    .welcome-footer {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.78rem;
+      color: var(--muted-2);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 18px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .welcome-footer-sep { color: var(--border-2); }
+
+    /* ── Pre-analysis state ─────────────────────────────────────────────────── */
+    .pre-analysis { max-width: 560px; animation: fadeUp 0.3s ease; }
+    .pre-analysis-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .pre-analysis-icon { font-size: 2rem; line-height: 1; }
+    .pre-analysis-filename { font-size: 1rem; font-weight: 700; color: var(--text); word-break: break-word; }
+    .pre-analysis-meta { font-size: 0.82rem; color: var(--muted-2); margin-top: 3px; }
+
+    .checklist-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--muted-2); margin-bottom: 10px; }
+    .checklist { list-style: none; margin-bottom: 14px; }
+    .checklist li {
+      font-size: 0.87rem;
+      padding: 6px 0;
+      color: #a8bdd4;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist li::before { content: "✓"; color: var(--success); font-weight: 700; flex-shrink: 0; }
+    .checklist-time { font-size: 0.78rem; color: var(--muted-2); padding: 8px 0 0; }
+    .pre-analysis-actions { margin-top: 18px; }
+
+    /* ── Progress view ──────────────────────────────────────────────────────── */
+    .progress-view { max-width: 600px; animation: fadeUp 0.3s ease; }
+    .progress-head { margin-bottom: 24px; }
+    .progress-head h2 { font-size: 1.15rem; font-weight: 800; color: var(--text); }
+    .progress-file { font-size: 0.85rem; color: var(--muted-2); margin-top: 4px; }
+
+    .steps { display: flex; flex-direction: column; gap: 8px; }
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--border);
+      transition: border-color 0.25s, background 0.25s;
+    }
+    .step.running { border-left-color: var(--primary); background: #0d1226; }
+    .step.done    { border-left-color: var(--success);  background: #050f0b; }
+    .step.error   { border-left-color: var(--danger);   background: #0d0505; }
+
+    .step-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700;
+      background: var(--surface-2); color: var(--muted-2);
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .step.running .step-num { background: var(--primary-dim); color: var(--primary); }
+    .step.done    .step-num { background: var(--success-bg);  color: var(--success); }
+    .step.error   .step-num { background: var(--danger-bg);   color: var(--danger);  }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .step.running .step-num { animation: pulse 1.3s ease-in-out infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 #818cf840; }
+      50%       { opacity: 0.6; box-shadow: 0 0 0 6px transparent; }
+    }
+
+    .step-body   { flex: 1; }
+    .step-title  { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+    .step-result { font-size: 0.8rem; color: var(--muted-2); margin-top: 3px; }
+    .step.done .step-result  { color: var(--success); }
+    .step.error .step-result { color: var(--danger); }
+    .step-elapsed { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Cards ──────────────────────────────────────────────────────────────── */
+    .report { max-width: 840px; animation: fadeUp 0.35s ease; }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.5rem 1.75rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 24px rgba(0,0,0,.3), 0 1px 4px rgba(0,0,0,.2);
+      margin-bottom: 1.1rem;
+    }
+    .header-card { display: flex; align-items: center; gap: 1.25rem; }
+    .header-icon { font-size: 2rem; line-height: 1; }
+    .report-filename {
+      font-size: 1.05rem; font-weight: 700;
+      color: var(--text); word-break: break-word;
+    }
+    .report-meta {
+      font-size: 0.78rem; color: var(--muted-2); margin-top: 0.3rem;
+    }
+    .report-actions { margin-left: auto; flex-shrink: 0; }
+    .btn-rerun {
+      padding: 6px 13px;
+      background: var(--surface-2);
+      color: var(--muted-2);
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-rerun:hover { background: var(--border-2); color: var(--text); }
+
+    .card-heading {
+      display: flex; align-items: baseline; gap: 8px;
+      margin-bottom: 4px;
+    }
+    .card h2 {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--muted-2);
+    }
+    .card h2 .sub { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
+    .card-desc {
+      font-size: 0.78rem; color: var(--muted);
+      margin-bottom: 1.1rem; margin-top: 2px;
+    }
+
+    /* Dominant emotion callout */
+    .dominant-callout {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 13px;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      border: 1px solid;
+    }
+
+    /* Bar rows */
+    .bar-row {
+      display: grid;
+      grid-template-columns: 148px 1fr 50px;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.55rem;
+    }
+    .bar-label  { font-size: 0.83rem; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-label.bold { font-weight: 700; color: var(--text); }
+    .bar-track  { background: var(--border); border-radius: 99px; height: 9px; overflow: hidden; }
+    .bar-fill   { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+    .bar-pct    { font-size: 0.74rem; color: var(--muted-2); text-align: right; font-variant-numeric: tabular-nums; }
+    .more-note  { font-size: 0.73rem; color: var(--muted); margin-top: 8px; }
+
+    /* Badge */
+    .badge {
+      display: inline-block; font-size: 0.57rem; font-weight: 700;
+      background: #1e3a5f; color: #60a5fa; border-radius: 4px;
+      padding: 1px 5px; vertical-align: middle; margin-left: 4px;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+    .badge-star { background: #422006; color: #fb923c; }
+    .badge-top  { background: var(--primary-dim); color: var(--primary); }
+
+    /* Chip tags for likes/dislikes & person type */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 4px 11px;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .chip-like    { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+    .chip-dislike { background: #2d0000; color: var(--danger); border: 1px solid #7f1d1d; }
+    .chip-type    { background: var(--primary-dim); color: var(--primary); border: 1px solid #312e81; font-weight: 700; text-transform: capitalize; }
+
+    /* Two-column layout */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .opinion-head { font-size: 0.84rem; font-weight: 700; margin-bottom: 10px; }
+    .empty-opinion { font-size: 0.82rem; color: var(--muted); font-style: italic; }
+
+    /* ── Add-to-profile card ────────────────────────────────────────────────── */
+    .add-profile-card {
+      border: 1px dashed #312e81;
+      background: linear-gradient(135deg, #0d0d20, #100d28);
+    }
+    .add-profile-row  { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .add-profile-row select,
+    .add-profile-row input[type="text"] {
+      flex: 1; min-width: 140px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-2);
+      border-radius: 8px;
+      font-size: 0.87rem;
+      background: var(--surface-2);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .add-profile-row select option { background: #0d1526; }
+    .add-profile-row select:focus,
+    .add-profile-row input:focus { border-color: var(--primary); }
+    .add-profile-status {
+      font-size: 0.82rem;
+      margin-top: 10px;
+      color: var(--muted-2);
+      min-height: 1.2em;
+    }
+    .add-profile-status.ok    { color: var(--success); }
+    .add-profile-status.error { color: var(--danger); }
+
+    /* ── Profile view ───────────────────────────────────────────────────────── */
+    .profile-view { max-width: 840px; animation: fadeUp 0.35s ease; }
+
+    .profile-header-card { display: flex; align-items: flex-start; gap: 1.25rem; }
+    .profile-avatar {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed, #a78bfa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 900; color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px #7c3aed40;
+    }
+    .profile-header-name { font-size: 1.15rem; font-weight: 800; color: var(--text); }
+    .profile-header-meta { font-size: 0.78rem; color: var(--muted-2); margin-top: 5px; line-height: 1.6; }
+    .profile-header-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; align-items: flex-start; }
+
+    /* Inline delete confirm */
+    .delete-confirm-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px;
+      font-size: 0.82rem; color: var(--danger);
+      animation: fadeUp 0.2s ease;
+    }
+
+    /* ── Profile hero snapshot ─────────────────────────────────────────────── */
+    .profile-hero {
+      background: linear-gradient(135deg, #0d1526 0%, #111a33 100%);
+      border: 1px solid var(--border-2);
+    }
+    .hero-top-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 2rem;
+      margin-bottom: 1rem;
+    }
+    .hero-archetype-badge {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--primary);
+      text-transform: capitalize;
+      letter-spacing: -0.3px;
+    }
+    .hero-archetype-sub {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 2px;
+    }
+    .hero-emotions {
+      display: flex;
+      gap: 1.5rem;
+      margin-left: auto;
+    }
+    .hero-emotion-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .hero-emotion-label {
+      font-size: 0.67rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .hero-emotion-value {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      text-transform: capitalize;
+    }
+    .hero-traits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .hero-trait-tag {
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border: 1px solid var(--border-2);
+    }
+
+    /* ── Bubble chart ──────────────────────────────────────────────────────── */
+    .profile-bubbles-card { padding-bottom: 1rem; }
+    .bubble-header-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .bubble-header-row h2 { margin: 0; }
+    .phase-legend {
+      display: flex;
+      gap: 14px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.7rem;
+      color: var(--muted-2);
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .bubble-container {
+      position: relative;
+      width: 100%;
+      overflow: visible;
+    }
+    #bubble-svg { display: block; }
+    #bubble-svg .bubble-group { cursor: pointer; }
+    #bubble-svg .bubble-group circle {
+      transition: filter 0.2s, stroke-width 0.2s;
+    }
+    #bubble-svg .bubble-group:hover circle {
+      filter: brightness(1.4) drop-shadow(0 0 10px var(--hover-color, #818cf8));
+      stroke-width: 2.5;
+    }
+    #bubble-svg .bubble-group text { pointer-events: none; }
+    .bubble-tooltip {
+      position: absolute;
+      background: #162035;
+      border: 1px solid var(--border-2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      pointer-events: none;
+      z-index: 10;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      min-width: 180px;
+      max-width: 260px;
+    }
+    .tooltip-name  { font-size: 0.82rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .tooltip-score { font-size: 1.1rem; font-weight: 900; color: var(--primary); margin-bottom: 4px; }
+    .tooltip-desc  { font-size: 0.73rem; color: var(--muted-2); line-height: 1.4; margin-bottom: 4px; }
+    .tooltip-label { font-size: 0.7rem; color: var(--muted); font-style: italic; }
+
+    @keyframes bubblePop {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    #bubble-svg .bubble-group {
+      animation: bubblePop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    /* ── Profile interests ─────────────────────────────────────────────────── */
+    .profile-interests-card .two-col { grid-template-columns: 1fr; gap: 1rem; }
+    .profile-interests-card .chip-group {
+      max-height: 160px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-2) transparent;
+    }
+
+    /* Session history */
+    .sessions-card h2 { margin-bottom: 14px; }
+    .session-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.84rem;
+    }
+    .session-item:last-child { border-bottom: none; }
+    .session-icon { font-size: 1rem; flex-shrink: 0; }
+    .session-file { flex: 1; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+    .session-date { font-size: 0.73rem; color: var(--muted-2); flex-shrink: 0; }
+    .session-dur  { font-size: 0.73rem; color: var(--muted-2); flex-shrink: 0; }
+
+    .profile-empty { font-size: 0.84rem; color: var(--muted); font-style: italic; padding: 8px 0; }
+
+    /* Profile onboarding card */
+    .profiles-onboarding {
+      padding: 6px 10px 10px;
+      color: var(--muted);
+      font-size: 0.77rem;
+      line-height: 1.55;
+    }
+
+    /* ── Loading spinner ─────────────────────────────────────────────────────── */
+    .loading-state {
+      display: flex; align-items: center; justify-content: center;
+      height: 200px;
+      color: var(--muted-2);
+      font-size: 0.88rem;
+      gap: 10px;
+    }
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border-2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error box ──────────────────────────────────────────────────────────── */
+    .error-box {
+      background: var(--danger-bg);
+      border: 1px solid #7f1d1d;
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      animation: fadeUp 0.3s ease;
+    }
+    .error-title  { font-weight: 800; color: var(--danger); margin-bottom: 6px; font-size: 1rem; }
+    .error-msg    { font-size: 0.88rem; color: #fca5a5; }
+    .error-detail {
+      font-size: 0.76rem; font-family: monospace;
+      white-space: pre-wrap; color: #fca5a5;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid #7f1d1d;
+      opacity: 0.7;
+    }
+
+    /* ── Animations ─────────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ── Responsive ─────────────────────────────────────────────────────────── */
+    @media (max-width: 620px) {
+      .two-col        { grid-template-columns: 1fr; }
+      .bar-row        { grid-template-columns: 110px 1fr 44px; }
+      .welcome-grid   { grid-template-columns: 1fr; }
+      .hero-top-row   { flex-direction: column; gap: 1rem; }
+      .hero-emotions  { margin-left: 0; }
+      .bubble-header-row { flex-direction: column; gap: 8px; }
+      .phase-legend   { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-gem">◆</span>
+    <span class="logo-text">Serendipity</span>
+  </div>
+  <div class="header-right">
+    <span class="header-tag">Audio Analysis</span>
+    <div class="status-dot-wrap">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-label">Idle</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+  <aside>
+    <!-- Audio files section -->
+    <div class="sidebar-section files">
+      <div class="sidebar-label">Audio Files</div>
+      <ul id="file-list" class="file-list">
+        <li style="padding:10px;color:var(--muted);font-size:0.82rem;">Loading…</li>
+      </ul>
+    </div>
+
+    <!-- Divider -->
+    <div class="sidebar-divider"></div>
+
+    <!-- Profiles section -->
+    <div class="sidebar-section profs">
+      <div class="sidebar-label">
+        Profiles
+        <button class="btn-sidebar-add" id="btn-new-profile" title="Create new profile">+</button>
+      </div>
+      <!-- Inline new-profile form -->
+      <div class="sidebar-new-profile" id="new-profile-panel">
+        <div class="sidebar-new-profile-inner">
+          <input type="text" id="sidebar-profile-input" placeholder="Profile name…" />
+          <button class="btn-sidebar-confirm" id="btn-create-profile">Add</button>
+        </div>
+      </div>
+      <ul id="profile-list" class="profile-list">
+        <li style="padding:8px 10px;color:var(--muted);font-size:0.78rem;">Loading…</li>
+      </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="sidebar-footer">
+      <button class="btn btn-primary" id="run-btn" disabled onclick="runAnalysis()">
+        Run Analysis
+      </button>
+      <button class="btn btn-icon" onclick="refreshAll()" title="Refresh">↺</button>
+    </div>
+  </aside>
+
+  <!-- ── Main content ─────────────────────────────────────────────────────── -->
+  <main id="main">
+    <!-- Welcome state shown on first load -->
+  </main>
+
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const S = {
+  files:           [],
+  selected:        null,   // selected audio filename
+  running:         false,
+  profiles:        [],
+  selectedProfile: null,   // selected profile name
+  currentReport:   null,   // last rendered report data
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function setMain(html) {
+  const el = document.getElementById('main');
+  el.innerHTML = html;
+  el.scrollTop = 0;   // always reset scroll when switching views
+}
+
+function setStatus(busy) {
+  const dot = document.getElementById('status-dot');
+  const lbl = document.getElementById('status-label');
+  if (busy) {
+    dot.classList.add('busy');
+    lbl.textContent = 'Analyzing…';
+  } else {
+    dot.classList.remove('busy');
+    lbl.textContent = 'Idle';
+  }
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadFiles();
+  loadProfiles();
+  showWelcome();
+  setupNewProfilePanel();
+});
+
+async function refreshAll() {
+  await Promise.all([loadFiles(), loadProfiles()]);
+}
+
+// ── New profile panel (inline sidebar, no prompt()) ───────────────────────────
+function setupNewProfilePanel() {
+  const btn    = document.getElementById('btn-new-profile');
+  const panel  = document.getElementById('new-profile-panel');
+  const input  = document.getElementById('sidebar-profile-input');
+  const create = document.getElementById('btn-create-profile');
+
+  btn.addEventListener('click', () => {
+    const open = panel.classList.toggle('open');
+    if (open) { setTimeout(() => input.focus(), 50); }
+    else { input.value = ''; }
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') createProfileFromSidebar();
+    if (e.key === 'Escape') { panel.classList.remove('open'); input.value = ''; }
+  });
+
+  create.addEventListener('click', createProfileFromSidebar);
+}
+
+async function createProfileFromSidebar() {
+  const input = document.getElementById('sidebar-profile-input');
+  const name  = (input.value || '').trim();
+  if (!name) return;
+  try {
+    const res = await fetch('/api/profiles', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name}),
+    });
+    if (res.ok) {
+      input.value = '';
+      document.getElementById('new-profile-panel').classList.remove('open');
+      await loadProfiles();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      input.style.borderColor = 'var(--danger)';
+      setTimeout(() => input.style.borderColor = '', 1500);
+      console.warn(err.error || 'Could not create profile');
+    }
+  } catch (e) { console.error(e); }
+}
+
+// ── Audio file list ───────────────────────────────────────────────────────────
+async function loadFiles() {
+  try {
+    const res  = await fetch('/api/files');
+    S.files    = await res.json();
+    renderSidebar();
+    if (S.selected) updateRunBtn();
+  } catch (e) {
+    document.getElementById('file-list').innerHTML =
+      '<li style="padding:10px;color:var(--danger);font-size:0.82rem;">Could not load files</li>';
+  }
+}
+
+function renderSidebar() {
+  const ul = document.getElementById('file-list');
+  if (!S.files.length) {
+    ul.innerHTML = `<li style="padding:10px;color:var(--muted);font-size:0.82rem;line-height:1.6;">
+      No audio files found.<br><em>Add files to <strong>Audio files/</strong></em>
+    </li>`;
+    return;
+  }
+  ul.innerHTML = S.files.map((f, i) => {
+    const dotCls = f.analysed ? 'dot-done' : (f.transcribed ? 'dot-trans' : 'dot-none');
+    const tip    = f.analysed ? 'Analysed — report available'
+                 : f.transcribed ? 'Transcribed — ready for analysis'
+                 : 'Not processed — run analysis to begin';
+    const active = S.selected === f.name ? ' active' : '';
+    return `<li class="file-item${active}" title="${tip}" data-idx="${i}">
+      <span class="dot ${dotCls}"></span>
+      <span class="file-name">${esc(f.name)}</span>
+      <span class="file-size">${f.size_mb}MB</span>
+    </li>`;
+  }).join('');
+
+  // Use event delegation — avoids any inline onclick quoting issues
+  ul.addEventListener('click', e => {
+    const li = e.target.closest('.file-item');
+    if (li) selectFile(parseInt(li.dataset.idx, 10));
+  }, {once: true});
+  // Re-attach on each render by using {once:true} above, but we need persistent
+  // delegation — so overwrite instead:
+  ul.onclick = e => {
+    const li = e.target.closest('.file-item');
+    if (li) selectFile(parseInt(li.dataset.idx, 10));
+  };
+}
+
+// ── File selection ────────────────────────────────────────────────────────────
+function selectFile(idx) {
+  const f = S.files[idx];
+  if (!f) return;
+  S.selected        = f.name;
+  S.selectedProfile = null;
+  renderSidebar();
+  renderProfilesSidebar();
+  updateRunBtn();
+  if (f.analysed) loadReport(f.name);
+  else            showPreAnalysis(f);
+}
+
+function updateRunBtn() {
+  const btn = document.getElementById('run-btn');
+  if (S.running) {
+    btn.disabled     = true;
+    btn.textContent  = 'Running…';
+  } else if (S.selected) {
+    btn.disabled     = false;
+    const f          = S.files.find(x => x.name === S.selected);
+    btn.textContent  = (f && f.analysed) ? 'Re-run Analysis' : 'Run Analysis';
+  } else {
+    btn.disabled     = true;
+    btn.textContent  = 'Run Analysis';
+  }
+}
+
+// ── Profile list ─────────────────────────────────────────────────────────────
+async function loadProfiles() {
+  try {
+    const res  = await fetch('/api/profiles');
+    S.profiles = await res.json();
+    renderProfilesSidebar();
+    populateProfileSelect();
+  } catch (e) {
+    document.getElementById('profile-list').innerHTML =
+      '<li style="padding:8px 10px;color:var(--danger);font-size:0.78rem;">Could not load</li>';
+  }
+}
+
+function renderProfilesSidebar() {
+  const ul = document.getElementById('profile-list');
+  if (!S.profiles.length) {
+    ul.innerHTML = `<li class="profiles-onboarding">
+      Profiles track a person over multiple recordings.<br>
+      Analyse a file, then click <strong>Add to Profile</strong>.
+    </li>`;
+    return;
+  }
+  ul.innerHTML = S.profiles.map(p => {
+    const active   = S.selectedProfile === p.name ? ' active' : '';
+    const sessions = p.session_count === 1 ? '1 session' : `${p.session_count}`;
+    return `<li class="profile-item${active}" title="${esc(p.name)}" data-name="${esc(p.name)}">
+      <span class="dot dot-prof"></span>
+      <span class="profile-name">${esc(p.name)}</span>
+      <span class="profile-badge">${sessions}</span>
+    </li>`;
+  }).join('');
+
+  // Event delegation — no inline onclick, no quoting issues
+  ul.onclick = e => {
+    const li = e.target.closest('.profile-item');
+    if (li) selectProfile(li.dataset.name);
+  };
+}
+
+// ── Profile selection ─────────────────────────────────────────────────────────
+async function selectProfile(name) {
+  S.selectedProfile = name;
+  S.selected        = null;
+  renderSidebar();
+  renderProfilesSidebar();
+  updateRunBtn();
+
+  setMain(`<div class="loading-state"><div class="spinner"></div> Loading profile…</div>`);
+
+  try {
+    const res = await fetch('/api/profile/' + encodeURIComponent(name));
+    if (!res.ok) { showError('Could not load profile.'); return; }
+    renderProfileView(await res.json());
+  } catch (e) { showError('Could not load profile.'); }
+}
+
+// ── Welcome state ─────────────────────────────────────────────────────────────
+function showWelcome() {
+  setMain(`
+    <div class="welcome-state">
+      <div class="welcome-hero">
+        <span class="welcome-gem">◆</span>
+        <div class="welcome-title">Serendipity</div>
+        <div class="welcome-tag">Understand people through their voice</div>
+      </div>
+
+      <div class="welcome-grid">
+        <div class="welcome-card">
+          <div class="welcome-card-title">How it works</div>
+          <ol class="welcome-steps">
+            <li>Drop an audio file into <code>Audio files/</code></li>
+            <li>Select it from the sidebar</li>
+            <li>Click <strong>Run Analysis</strong> — watch live progress</li>
+            <li>Read the 4-section report</li>
+            <li>Add to a <strong>Profile</strong> to track over time</li>
+          </ol>
+        </div>
+        <div class="welcome-card">
+          <div class="welcome-card-title">What you'll learn</div>
+          <ul class="welcome-learns">
+            <li>🔊 <strong>Audio Emotion</strong> — tone of voice</li>
+            <li>💬 <strong>Text Emotion</strong> — 27 emotion labels</li>
+            <li>👍 <strong>Likes &amp; Dislikes</strong> — topic sentiment</li>
+            <li>🧠 <strong>Person Type</strong> — 10-category classification</li>
+            <li>🧩 <strong>Profiles</strong> — 19 deep character metrics</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="welcome-footer">
+        <span style="color:var(--muted)">Formats: mp3 · m4a · wav · aac · flac</span>
+        <span class="welcome-footer-sep">·</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--muted)"></span> Not processed</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#60a5fa;box-shadow:0 0 4px #60a5fa80"></span> Transcribed</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--success);box-shadow:0 0 4px #34d39980"></span> Analysed</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--primary);box-shadow:0 0 4px #818cf880"></span> Profile</span>
+      </div>
+    </div>`);
+}
+
+// ── Pre-analysis state ────────────────────────────────────────────────────────
+function showPreAnalysis(f) {
+  const sizeStr = f.size_mb + ' MB';
+  const status  = f.transcribed ? 'Transcribed — ready for Stage 2 analysis' : 'Not yet processed';
+  setMain(`
+    <div class="pre-analysis">
+      <div class="card">
+        <div class="pre-analysis-header">
+          <div class="pre-analysis-icon">🎵</div>
+          <div>
+            <div class="pre-analysis-filename">${esc(f.name)}</div>
+            <div class="pre-analysis-meta">${sizeStr} &nbsp;·&nbsp; ${status}</div>
+          </div>
+        </div>
+
+        <div class="checklist-title">Analysis will:</div>
+        <ul class="checklist">
+          <li>Transcribe speech to timestamped text${f.transcribed ? ' <em style="color:var(--success)">(already done — loading from cache)</em>' : ''}</li>
+          <li>Detect emotion from the tone of voice</li>
+          <li>Detect emotions from the words spoken (27 labels)</li>
+          <li>Extract what the speaker likes and dislikes</li>
+          <li>Classify what kind of person the speaker sounds like</li>
+        </ul>
+        <div class="checklist-time">⏱ First run takes 5–10 min (models loading) · Subsequent runs are faster</div>
+
+        <div class="pre-analysis-actions">
+          <button class="btn btn-primary" onclick="runAnalysis()" style="width:100%;padding:12px">
+            Run Analysis
+          </button>
+        </div>
+      </div>
+    </div>`);
+}
+
+// ── Load existing report ──────────────────────────────────────────────────────
+async function loadReport(filename) {
+  try {
+    const res = await fetch('/api/report/' + encodeURIComponent(filename));
+    if (!res.ok) { showPreAnalysis(S.files.find(x => x.name === filename) || {name: filename}); return; }
+    const data = await res.json();
+    S.currentReport = data;
+    renderReport(data);
+  } catch (e) { showError('Could not load report.'); }
+}
+
+// ── Run analysis (SSE) ────────────────────────────────────────────────────────
+async function runAnalysis() {
+  if (!S.selected || S.running) return;
+  S.running = true;
+  setStatus(true);
+  updateRunBtn();
+  showProgress(S.selected);
+
+  try {
+    const res = await fetch('/api/analyse', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({file: S.selected}),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({error: 'Unknown error'}));
+      showError(err.error);
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const dec    = new TextDecoder();
+    let   buf    = '';
+    let terminalReceived = false;
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const parts = buf.split('\n\n');
+      buf = parts.pop() ?? '';
+      for (const part of parts) {
+        if (part.startsWith('data: ')) {
+          try {
+            const ev = JSON.parse(part.slice(6));
+            if (ev.type === 'done' || ev.type === 'error') terminalReceived = true;
+            handleEvent(ev);
+          }
+          catch (e) { console.warn('SSE parse error', e, part); }
+        }
+      }
+    }
+    if (!terminalReceived) showError('Connection lost — please try again.');
+  } catch (e) {
+    showError('Connection error: ' + e.message);
+  } finally {
+    S.running = false;
+    setStatus(false);
+    updateRunBtn();
+    await loadFiles();
+  }
+}
+
+function handleEvent(ev) {
+  switch (ev.type) {
+    case 'ping':  break;   // heartbeat — keep-alive, nothing to do
+    case 'step':  setStep(ev.n, 'running', ev.msg, '');    break;
+    case 'ok':    setStep(ev.n, 'done',    '',     ev.msg); break;
+    case 'done':
+      S.currentReport = ev.data;
+      markAllDone();
+      if (ev.data.file === S.selected) {
+        setTimeout(() => renderReport(ev.data), 500);
+      }
+      break;
+    case 'error':
+      showError(ev.msg, ev.detail);
+      break;
+  }
+}
+
+// ── Progress steps ────────────────────────────────────────────────────────────
+const STEP_LABELS = [
+  'Getting transcript segments',
+  'Analysing audio emotion',
+  'Analysing text emotion',
+  'Extracting likes and dislikes',
+  'Classifying person type',
+];
+const STEP_DESCS = [
+  'Loads or auto-generates timestamped text segments',
+  'Reads tone of voice — pitch, pace, energy (~1.2 GB model)',
+  'Reads the actual words — 27 GoEmotions labels',
+  'Finds what speaker is positive or negative about',
+  'Zero-shot personality classification across 10 types',
+];
+
+// Track per-step start times for elapsed timer
+const _stepStart = {};
+
+function showProgress(filename) {
+  const rows = STEP_LABELS.map((lbl, i) => `
+    <div class="step" id="s${i+1}">
+      <div class="step-num">${i+1}</div>
+      <div class="step-body">
+        <div class="step-title">${lbl}</div>
+        <div class="step-result">${STEP_DESCS[i]}</div>
+        <div class="step-elapsed" id="se${i+1}"></div>
+      </div>
+    </div>`).join('');
+
+  setMain(`
+    <div class="progress-view">
+      <div class="progress-head">
+        <h2>Running Analysis</h2>
+        <div class="progress-file">${esc(filename)}</div>
+      </div>
+      <div class="steps">${rows}</div>
+    </div>`);
+}
+
+function setStep(n, status, title, result) {
+  const el = document.getElementById('s' + n);
+  if (!el) return;
+  el.className = 'step ' + status;
+  const icons = {running: '▶', done: '✓', error: '✗'};
+  el.querySelector('.step-num').textContent = icons[status] ?? n;
+
+  if (status === 'running') {
+    _stepStart[n] = Date.now();
+    startElapsedTimer(n);
+  }
+  if (status === 'done' || status === 'error') {
+    stopElapsedTimer(n);
+    const elapsed = _stepStart[n] ? ((Date.now() - _stepStart[n]) / 1000).toFixed(1) + 's' : '';
+    const eEl = document.getElementById('se' + n);
+    if (eEl) eEl.textContent = elapsed ? `Completed in ${elapsed}` : '';
+  }
+
+  if (title)  el.querySelector('.step-title').textContent  = title;
+  if (result) el.querySelector('.step-result').textContent = result;
+}
+
+const _timers = {};
+function startElapsedTimer(n) {
+  clearInterval(_timers[n]);
+  const eEl = document.getElementById('se' + n);
+  _timers[n] = setInterval(() => {
+    if (!eEl || !_stepStart[n]) return;
+    const s = ((Date.now() - _stepStart[n]) / 1000).toFixed(0);
+    eEl.textContent = `${s}s elapsed…`;
+  }, 1000);
+}
+function stopElapsedTimer(n) {
+  clearInterval(_timers[n]);
+  delete _timers[n];
+}
+
+function markAllDone() {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('s' + i);
+    if (el && !el.classList.contains('done') && !el.classList.contains('error')) {
+      setStep(i, 'done', '', '');
+    }
+  }
+}
+
+// ── Report rendering ──────────────────────────────────────────────────────────
+function renderReport(d) {
+  const t      = d.transcript;
+  const dur    = t.total_duration_sec;
+  const m      = Math.floor(dur / 60), s = Math.round(dur % 60);
+  const durStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+  const dateStr = (d.analysed_at || '').replace('T', ' ');
+
+  setMain(`
+    <div class="report">
+
+      <!-- Header -->
+      <div class="card header-card">
+        <div class="header-icon">🎵</div>
+        <div style="flex:1">
+          <div class="report-filename">${esc(d.file)}</div>
+          <div class="report-meta">
+            Analysed ${esc(dateStr)}
+            &nbsp;·&nbsp; ${esc(durStr)}
+            &nbsp;·&nbsp; ${t.segment_count} segments
+            &nbsp;·&nbsp; ${(t.language||'?').toUpperCase()} (${Math.round((t.language_confidence||0)*100)}%)
+          </div>
+        </div>
+        <div class="report-actions">
+          <button class="btn-rerun" onclick="runAnalysis()">Re-run</button>
+        </div>
+      </div>
+
+      ${audioEmotionCard(d.audio_emotion)}
+      ${textEmotionCard(d.text_emotion)}
+      ${likesCard(d.likes || [], d.dislikes || [])}
+      ${personCard(d.person_type)}
+      ${addToProfileCard(d.file)}
+
+    </div>`);
+
+  populateProfileSelect();
+}
+
+// ── Audio emotion card ────────────────────────────────────────────────────────
+const AUDIO_COLOURS = {
+  happy: '#f59e0b', neutral: '#818cf8', angry: '#f87171', sad: '#60a5fa',
+  calm: '#22d3ee', disgust: '#a3e635', fearful: '#c084fc', surprised: '#fb923c',
+};
+
+function audioEmotionCard(ae) {
+  const sorted = Object.entries(ae.scores || {}).sort((a,b) => b[1] - a[1]);
+  const domColor = AUDIO_COLOURS[ae.dominant] || '#818cf8';
+
+  const callout = `<div class="dominant-callout" style="background:${domColor}18;color:${domColor};border-color:${domColor}40">
+    <span>●</span> ${esc(ae.dominant || '—')}
+  </div>`;
+
+  const rows = sorted.map(([lbl, score]) => {
+    const pct   = (score * 100).toFixed(1);
+    const color = AUDIO_COLOURS[lbl] || '#818cf8';
+    const isDom = lbl === ae.dominant;
+    const badge = isDom ? " <span class='badge badge-top'>dominant</span>" : '';
+    return `<div class="bar-row">
+      <span class="bar-label${isDom ? ' bold' : ''}">${esc(lbl)}${badge}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="bar-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="card">
+    <h2>🔊 Audio Emotion <span class="sub">tone of voice</span></h2>
+    <div class="card-desc">Raw audio signal — pitch, pace, energy. Reads <em>how</em> it's said, not the words.</div>
+    ${callout}
+    ${rows}
+  </div>`;
+}
+
+// ── Text emotion card ─────────────────────────────────────────────────────────
+function textEmotionCard(te) {
+  const all    = Object.entries(te.scores || {});
+  const top10  = all.slice(0, 10);
+  const rest   = all.length - 10;
+
+  // Top 3 as chips
+  const topChips = all.slice(0, 3).map(([lbl]) =>
+    `<span class="chip chip-type">${esc(lbl)}</span>`).join('');
+
+  const rows = top10.map(([lbl, score], i) => {
+    const pct   = (score * 100).toFixed(1);
+    const color = i === 0 ? '#a78bfa' : i < 3 ? '#818cf8' : '#4f5fa0';
+    const isDom = lbl === te.dominant;
+    const badge = isDom ? " <span class='badge badge-top'>dominant</span>" : '';
+    return `<div class="bar-row">
+      <span class="bar-label${isDom ? ' bold' : ''}">${esc(lbl)}${badge}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="bar-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+  const note = rest > 0 ? `<p class="more-note">+ ${rest} more emotions with lower scores</p>` : '';
+
+  return `<div class="card">
+    <h2>💬 Text Emotion <span class="sub">top 10 of ${all.length}</span></h2>
+    <div class="card-desc">Actual spoken words — 27 GoEmotions labels, multi-label (emotions overlap).</div>
+    <div class="chip-group" style="margin-bottom:14px">${topChips}</div>
+    ${rows}${note}
+  </div>`;
+}
+
+// ── Likes & dislikes card ─────────────────────────────────────────────────────
+function likesCard(likes, dislikes) {
+  function chips(lst, cls, icon) {
+    if (!lst.length) return `<p class="empty-opinion">None detected</p>`;
+    return `<div class="chip-group">${lst.map(x =>
+      `<span class="chip ${cls}">${icon} ${esc(x)}</span>`
+    ).join('')}</div>`;
+  }
+  return `<div class="card">
+    <h2>👍 Likes &amp; Dislikes</h2>
+    <div class="card-desc">Topics the speaker was clearly positive or negative about (80%+ confidence).</div>
+    <div class="two-col">
+      <div>
+        <div class="opinion-head" style="color:#4ade80">✓ Likes <span style="font-size:0.74rem;color:var(--muted);font-weight:400">(${likes.length})</span></div>
+        ${chips(likes, 'chip-like', '●')}
+      </div>
+      <div>
+        <div class="opinion-head" style="color:var(--danger)">✗ Dislikes <span style="font-size:0.74rem;color:var(--muted);font-weight:400">(${dislikes.length})</span></div>
+        ${chips(dislikes, 'chip-dislike', '●')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Person type card ──────────────────────────────────────────────────────────
+function personCard(pt) {
+  const top    = new Set(pt.top_traits || []);
+  const sorted = Object.entries(pt.scores || {}).sort((a,b) => b[1] - a[1]);
+
+  const chips = (pt.top_traits || []).map(t =>
+    `<span class="chip chip-type">★ ${esc(t)}</span>`).join('');
+
+  const rows = sorted.map(([lbl, score]) => {
+    const pct   = (score * 100).toFixed(1);
+    const isTop = top.has(lbl);
+    const color = isTop ? '#818cf8' : '#1e2d48';
+    const star  = isTop ? '<span class="badge badge-top">top</span>' : '';
+    return `<div class="bar-row">
+      <span class="bar-label${isTop ? ' bold' : ''}">${esc(lbl)}${star}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <span class="bar-pct">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="card">
+    <h2>🧠 Person Type</h2>
+    <div class="card-desc">Zero-shot classification across 10 personality types — no fine-tuning, generalises to new labels.</div>
+    <div class="chip-group" style="margin-bottom:16px">${chips || '<em style="color:var(--muted);font-size:0.84rem">No traits above threshold</em>'}</div>
+    ${rows}
+  </div>`;
+}
+
+// ── Add-to-profile card ───────────────────────────────────────────────────────
+function addToProfileCard(filename) {
+  return `<div class="card add-profile-card" id="add-profile-card">
+    <h2>🧩 Add to Profile <span class="sub">track this speaker over time</span></h2>
+    <div class="card-desc">Save this session to build a long-term profile with 19 character metrics.</div>
+    <div class="add-profile-row">
+      <select id="profile-select-main" onchange="handleProfileSelectChange()">
+        <option value="">— select a profile —</option>
+        <option value="__new__">+ Create new profile…</option>
+      </select>
+      <input type="text" id="new-profile-input" placeholder="New profile name…" style="display:none" />
+      <button class="btn btn-primary btn-sm" onclick="addToProfile()">Add Session</button>
+    </div>
+    <div class="add-profile-status" id="add-profile-status"></div>
+  </div>`;
+}
+
+function populateProfileSelect() {
+  const sel = document.getElementById('profile-select-main');
+  if (!sel) return;
+  while (sel.options.length > 2) sel.remove(2);
+  S.profiles.forEach(p => {
+    const opt       = document.createElement('option');
+    opt.value       = p.name;
+    opt.textContent = `${p.name} (${p.session_count} session${p.session_count !== 1 ? 's' : ''})`;
+    sel.add(opt);
+  });
+}
+
+function handleProfileSelectChange() {
+  const sel = document.getElementById('profile-select-main');
+  const inp = document.getElementById('new-profile-input');
+  if (!sel || !inp) return;
+  inp.style.display = sel.value === '__new__' ? 'block' : 'none';
+}
+
+async function addToProfile() {
+  const filename = S.currentReport?.file;
+  if (!filename) return;
+
+  const sel      = document.getElementById('profile-select-main');
+  const inp      = document.getElementById('new-profile-input');
+  const statusEl = document.getElementById('add-profile-status');
+  if (!sel || !statusEl) return;
+
+  let profileName = sel.value === '__new__'
+    ? (inp ? inp.value.trim() : '')
+    : sel.value;
+
+  if (!profileName) {
+    statusEl.className   = 'add-profile-status error';
+    statusEl.textContent = 'Please select a profile or enter a new name.';
+    return;
+  }
+
+  statusEl.className   = 'add-profile-status';
+  statusEl.textContent = 'Adding session…';
+
+  try {
+    const res = await fetch(`/api/profile/${encodeURIComponent(profileName)}/add-session`, {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify({file: filename}),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({error: 'Unknown error'}));
+      statusEl.className   = 'add-profile-status error';
+      statusEl.textContent = err.error;
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const dec    = new TextDecoder();
+    let   buf    = '';
+    let terminalReceived = false;
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const parts = buf.split('\n\n');
+      buf = parts.pop() ?? '';
+      for (const part of parts) {
+        if (part.startsWith('data: ')) {
+          try {
+            const ev = JSON.parse(part.slice(6));
+            if (ev.type === 'ping') { /* heartbeat, ignore */ }
+            else if (ev.type === 'step') {
+              statusEl.textContent = ev.msg;
+            } else if (ev.type === 'done') {
+              terminalReceived     = true;
+              statusEl.className   = 'add-profile-status ok';
+              statusEl.textContent = `✓ Added to "${profileName}" · ${ev.data.session_count} session(s)`;
+              await loadProfiles();
+            } else if (ev.type === 'error') {
+              terminalReceived     = true;
+              statusEl.className   = 'add-profile-status error';
+              statusEl.textContent = ev.msg;
+            }
+          } catch (e) { /* ignore */ }
+        }
+      }
+    }
+    if (!terminalReceived) {
+      statusEl.className   = 'add-profile-status error';
+      statusEl.textContent = 'Connection lost — please try again.';
+    }
+  } catch (e) {
+    statusEl.className   = 'add-profile-status error';
+    statusEl.textContent = 'Connection error: ' + e.message;
+  }
+}
+
+// ── Profile view ──────────────────────────────────────────────────────────────
+const PHASE_COLOURS = {1: '#f59e0b', 2: '#3b82f6', 3: '#a78bfa', 4: '#34d399'};
+const PHASE_INFO    = {
+  1: {name: 'Surface',    subtitle: "What's immediately visible"},
+  2: {name: 'Resource',   subtitle: 'What they control'},
+  3: {name: 'Behavioral', subtitle: 'How they act'},
+  4: {name: 'Deep Core',  subtitle: 'Who they are'},
+};
+
+const METRIC_META = {
+  economic_utility:          {phase:1, name:'Economic Utility',          desc:'Ability to generate profit or solve expensive problems'},
+  institutional_accreditation:{phase:1, name:'Institutional Accreditation',desc:'Formal credentials — degrees, titles, elite affiliations'},
+  network_density:           {phase:1, name:'Network Density',           desc:'Richness of connections and their status'},
+  attention_capture:         {phase:1, name:'Attention Capture',         desc:'Ability to command a room or digital feed'},
+  asset_accumulation:        {phase:2, name:'Asset Accumulation',        desc:'Ownership of wealth, property, stocks, or IP'},
+  time_sovereignty:          {phase:2, name:'Time Sovereignty',          desc:'Luxury of controlling one\'s own schedule'},
+  information_asymmetry:     {phase:2, name:'Information Asymmetry',     desc:'Access to insider knowledge others lack'},
+  scarcity:                  {phase:2, name:'Scarcity',                  desc:'How rare and hard to replace this person is'},
+  generational_legacy:       {phase:2, name:'Generational Legacy',       desc:'Thinking in terms of long-term impact'},
+  risk_tolerance:            {phase:3, name:'Risk Tolerance',            desc:'Willingness to bet big on high-stakes decisions'},
+  reliability_consistency:   {phase:3, name:'Reliability / Consistency', desc:'Consistently doing what they say they will do'},
+  social_proof:              {phase:3, name:'Social Proof',              desc:'Being publicly valued by other high-value people'},
+  moral_signaling:           {phase:3, name:'Moral Signaling',           desc:'Public performance of virtue and ethics'},
+  cultural_compliance:       {phase:3, name:'Cultural Compliance',       desc:'Fitting in — or strategically breaking norms'},
+  emotional_intelligence:    {phase:4, name:'Emotional Intelligence',    desc:'Reading and navigating complex social emotions'},
+  creative_agency:           {phase:4, name:'Creative Agency',           desc:'Capacity to generate something original from nothing'},
+  resilience:                {phase:4, name:'Resilience / Antifragility',desc:'Growing stronger from failure and adversity'},
+  tribal_loyalty:            {phase:4, name:'Tribal Loyalty',            desc:'Sacrificing personal gain for the in-group'},
+  transcendence:             {phase:4, name:'Transcendence',             desc:'Symbolising a higher ideal, inspiring others'},
+};
+
+const METRIC_ABBREV = {
+  economic_utility:           'Econ',
+  institutional_accreditation:'Cred',
+  network_density:            'Network',
+  attention_capture:          'Attn',
+  asset_accumulation:         'Assets',
+  time_sovereignty:           'Time',
+  information_asymmetry:      'Info',
+  scarcity:                   'Scarce',
+  generational_legacy:        'Legacy',
+  risk_tolerance:             'Risk',
+  reliability_consistency:    'Reliable',
+  social_proof:               'Social',
+  moral_signaling:            'Moral',
+  cultural_compliance:        'Culture',
+  emotional_intelligence:     'EQ',
+  creative_agency:            'Create',
+  resilience:                 'Grit',
+  tribal_loyalty:             'Loyal',
+  transcendence:              'Transcend',
+};
+
+// ── Circle packing algorithm ─────────────────────────────────────────────────
+function packBubbles(metricEntries, width, height) {
+  const MIN_R = 24, MAX_R = 52, PAD = 5;
+  const cx = width / 2, cy = height / 2;
+
+  // Normalize scores within actual data range for visible size differences
+  const scores = metricEntries.map(([, m]) => m.score);
+  const minScore = Math.min(...scores);
+  const maxScore = Math.max(...scores);
+  const range = maxScore - minScore || 1;
+
+  const nodes = metricEntries.map(([key, m], i) => {
+    const meta = METRIC_META[key];
+    const norm = (m.score - minScore) / range;  // 0–1 within data range
+    const r = MIN_R + norm * (MAX_R - MIN_R);
+    const angle = i * 2.399963;  // golden angle
+    const dist = 40 + i * 16;
+    return { key, score: m.score, phase: meta.phase, r,
+             x: cx + Math.cos(angle) * dist,
+             y: cy + Math.sin(angle) * dist };
+  });
+
+  nodes.sort((a, b) => b.r - a.r);
+
+  for (let iter = 0; iter < 150; iter++) {
+    // Collision resolution — push overlapping circles apart
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const minDist = a.r + b.r + PAD;
+        if (dist < minDist) {
+          const overlap = (minDist - dist) / dist * 0.75;
+          a.x -= dx * overlap; a.y -= dy * overlap;
+          b.x += dx * overlap; b.y += dy * overlap;
+        }
+      }
+    }
+    // Gentle gravity toward center (weaker to let bubbles spread)
+    const gravity = 0.015;
+    for (const n of nodes) {
+      n.x += (cx - n.x) * gravity;
+      n.y += (cy - n.y) * gravity;
+    }
+    for (const n of nodes) {
+      n.x = Math.max(n.r, Math.min(width - n.r, n.x));
+      n.y = Math.max(n.r, Math.min(height - n.r, n.y));
+    }
+  }
+  return nodes;
+}
+
+// ── SVG bubble rendering ─────────────────────────────────────────────────────
+function renderBubbleSVG(metrics, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const svgEl = container.querySelector('svg');
+  const rect = container.getBoundingClientRect();
+  const W = Math.min(Math.floor(rect.width), 800) || 780;
+  const H = 480;
+  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  const entries = Object.entries(metrics).filter(([k]) => METRIC_META[k]);
+  if (!entries.length) { svgEl.innerHTML = ''; return; }
+  const nodes = packBubbles(entries, W, H);
+
+  let svg = '';
+  nodes.forEach((n, i) => {
+    const color = PHASE_COLOURS[n.phase];
+    const pct = Math.round(n.score * 100);
+    const abbrev = METRIC_ABBREV[n.key] || '';
+    const d = n.r * 2;
+    const delay = (i * 0.04).toFixed(2);
+
+    let labelLine = '', scoreLine = '';
+    const fontSize = d >= 100 ? 12 : d >= 70 ? 11 : 10;
+    if (d >= 56) {
+      labelLine = `<text x="${n.x}" y="${n.y - 5}" text-anchor="middle" fill="${color}" font-size="${fontSize}" font-weight="700">${abbrev}</text>`;
+      scoreLine = `<text x="${n.x}" y="${n.y + 11}" text-anchor="middle" fill="#e2e8f0" font-size="${fontSize - 1}" font-weight="600" opacity="0.85">${pct}%</text>`;
+    } else if (d >= 40) {
+      labelLine = `<text x="${n.x}" y="${n.y + 4}" text-anchor="middle" fill="${color}" font-size="${fontSize}" font-weight="700">${abbrev}</text>`;
+    } else {
+      scoreLine = `<text x="${n.x}" y="${n.y + 4}" text-anchor="middle" fill="#e2e8f0" font-size="9" font-weight="600" opacity="0.85">${pct}%</text>`;
+    }
+
+    svg += `<g class="bubble-group" data-key="${n.key}" style="animation-delay:${delay}s;transform-origin:${n.x}px ${n.y}px;--hover-color:${color}">
+      <circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="${color}" fill-opacity="0.12" stroke="${color}" stroke-width="1.5"/>
+      ${labelLine}${scoreLine}
+    </g>`;
+  });
+  svgEl.innerHTML = svg;
+
+  // Tooltip wiring
+  const tooltip = document.getElementById('bubble-tooltip');
+  if (!tooltip) return;
+  svgEl.querySelectorAll('.bubble-group').forEach(g => {
+    g.addEventListener('mouseenter', () => {
+      const key = g.dataset.key;
+      const meta = METRIC_META[key];
+      const m = metrics[key];
+      tooltip.querySelector('.tooltip-name').textContent = meta.name;
+      tooltip.querySelector('.tooltip-score').textContent = Math.round(m.score * 100) + '%';
+      tooltip.querySelector('.tooltip-desc').textContent = meta.desc;
+      tooltip.querySelector('.tooltip-label').textContent = m.label;
+
+      const circle = g.querySelector('circle');
+      const cxVal = parseFloat(circle.getAttribute('cx'));
+      const cyVal = parseFloat(circle.getAttribute('cy'));
+      const rVal  = parseFloat(circle.getAttribute('r'));
+      const svgRect = svgEl.getBoundingClientRect();
+      const scaleX = svgRect.width / W;
+      const scaleY = svgRect.height / H;
+      let left = cxVal * scaleX + rVal * scaleX + 10;
+      let top  = cyVal * scaleY - 20;
+      if (left + 220 > svgRect.width) left = cxVal * scaleX - rVal * scaleX - 220;
+      if (top < 0) top = 4;
+      tooltip.style.left = left + 'px';
+      tooltip.style.top  = top + 'px';
+      tooltip.style.display = 'block';
+    });
+    g.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  });
+}
+
+// ── Profile view renderer ────────────────────────────────────────────────────
+function renderProfileView(d) {
+  const metrics = d.metrics || {};
+  const entries = Object.entries(metrics).filter(([k]) => METRIC_META[k]);
+
+  // Basic stats
+  const totalSec = d.total_duration_sec || 0;
+  const hh = Math.floor(totalSec / 3600);
+  const mm = Math.floor((totalSec % 3600) / 60);
+  const durStr = hh > 0 ? `${hh}h ${mm}m` : `${mm}m`;
+  const lastUp   = (d.last_updated || '').replace('T', ' ').substring(0, 16);
+  const initial  = (d.name || '?')[0].toUpperCase();
+  const sessLabel = d.session_count === 1 ? '1 session' : `${d.session_count} sessions`;
+
+  // Top 3 metrics for hero trait tags
+  const sorted = entries.slice().sort((a, b) => b[1].score - a[1].score);
+  const top3 = sorted.slice(0, 3);
+  const archetype = top3.length ? METRIC_META[top3[0][0]].name : 'Unknown';
+
+  // Emotion data
+  const ep = d.emotion_profile || {};
+
+  // Hero trait tags
+  const traitTags = top3.map(([key]) => {
+    const meta = METRIC_META[key];
+    const color = PHASE_COLOURS[meta.phase];
+    return `<span class="hero-trait-tag" style="background:${color}18;color:${color};border-color:${color}40">${esc(meta.name)}</span>`;
+  }).join('');
+
+  // Hero section
+  const heroHtml = entries.length ? `
+    <div class="card profile-hero">
+      <div class="hero-top-row">
+        <div>
+          <div class="hero-archetype-badge">${esc(archetype)}</div>
+          <div class="hero-archetype-sub">Dominant trait</div>
+        </div>
+        <div class="hero-emotions">
+          <div class="hero-emotion-item">
+            <span class="hero-emotion-label">Voice tone</span>
+            <span class="hero-emotion-value">${esc(ep.audio_dominant || '—')}</span>
+          </div>
+          <div class="hero-emotion-item">
+            <span class="hero-emotion-label">Text mood</span>
+            <span class="hero-emotion-value">${esc(ep.text_dominant || '—')}</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-traits">${traitTags}</div>
+    </div>` : '';
+
+  // Bubble chart
+  const bubbleHtml = entries.length ? `
+    <div class="card profile-bubbles-card">
+      <div class="bubble-header-row">
+        <h2>Behavioral Metrics</h2>
+        <div class="phase-legend">
+          <span class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>Surface</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span>Resource</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Behavioral</span>
+          <span class="legend-item"><span class="legend-dot" style="background:#34d399"></span>Deep Core</span>
+        </div>
+      </div>
+      <div class="bubble-container" id="bubble-container">
+        <svg id="bubble-svg" width="100%" height="480"></svg>
+        <div class="bubble-tooltip" id="bubble-tooltip" style="display:none">
+          <div class="tooltip-name"></div>
+          <div class="tooltip-score"></div>
+          <div class="tooltip-desc"></div>
+          <div class="tooltip-label"></div>
+        </div>
+      </div>
+    </div>` : '<div class="card"><p class="profile-empty">No data yet — add sessions to see metrics.</p></div>';
+
+  // Interests
+  const likes = d.interests?.likes || [];
+  const dislikes = d.interests?.dislikes || [];
+  const interestsHtml = (likes.length || dislikes.length) ? `
+    <div class="card profile-interests-card">
+      <h2>Interests</h2>
+      <div class="two-col">
+        <div>
+          <div class="opinion-head" style="color:#4ade80">Likes <span style="font-size:0.74rem;color:var(--muted);font-weight:400">(${likes.length})</span></div>
+          <div class="chip-group">${likes.map(l => `<span class="chip chip-like">${esc(l)}</span>`).join('')}</div>
+        </div>
+        <div>
+          <div class="opinion-head" style="color:var(--danger)">Dislikes <span style="font-size:0.74rem;color:var(--muted);font-weight:400">(${dislikes.length})</span></div>
+          <div class="chip-group">${dislikes.map(l => `<span class="chip chip-dislike">${esc(l)}</span>`).join('')}</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  // Sessions
+  const sessions = (d.sessions || []).slice().reverse();
+  const sessionRows = sessions.length
+    ? sessions.map(s => {
+        const sd = s.duration_sec || 0;
+        const sm = Math.floor(sd / 60), ss = Math.round(sd % 60);
+        const durS = sm > 0 ? `${sm}m ${ss}s` : `${ss}s`;
+        const dt = (s.analysed_at || '').replace('T', ' ').substring(0, 16);
+        return `<div class="session-item">
+          <span class="session-icon">🎵</span>
+          <span class="session-file">${esc(s.file)}</span>
+          <span class="session-date">${esc(dt)}</span>
+          <span class="session-dur">${durS}</span>
+        </div>`;
+      }).join('')
+    : '<p class="profile-empty">No sessions yet.</p>';
+
+  setMain(`
+    <div class="profile-view">
+      <div class="card header-card profile-header-card">
+        <div class="profile-avatar">${esc(initial)}</div>
+        <div style="flex:1">
+          <div class="profile-header-name">${esc(d.name)}</div>
+          <div class="profile-header-meta">
+            ${sessLabel} &nbsp;·&nbsp; ${durStr} total
+            ${lastUp ? `&nbsp;·&nbsp; Updated ${lastUp}` : ''}
+          </div>
+        </div>
+        <div class="profile-header-actions">
+          <button class="btn btn-outline btn-sm" id="btn-reset-profile">Reset</button>
+          <button class="btn btn-danger-outline btn-sm" id="btn-delete-profile">Delete</button>
+        </div>
+      </div>
+      ${heroHtml}
+      ${bubbleHtml}
+      ${interestsHtml}
+      <div class="card sessions-card">
+        <h2>🎵 Sessions <span class="sub">${sessLabel}</span></h2>
+        ${sessionRows}
+      </div>
+    </div>`);
+
+  // Render bubbles after DOM insertion
+  if (entries.length) {
+    renderBubbleSVG(metrics, 'bubble-container');
+  }
+
+  // Reset handler
+  const profileName = d.name;
+  document.getElementById('btn-reset-profile').addEventListener('click', () => {
+    showResetConfirm(profileName);
+  });
+
+  // Delete handler
+  document.getElementById('btn-delete-profile').addEventListener('click', () => {
+    showDeleteConfirm(profileName);
+  });
+}
+
+function showResetConfirm(name) {
+  const btn = document.getElementById('btn-reset-profile');
+  if (!btn) return;
+  btn.style.display = 'none';
+  const row = document.createElement('div');
+  row.className = 'delete-confirm-row';
+  row.innerHTML = `<span>Reset "${esc(name)}"?</span>
+    <button class="btn btn-sm btn-outline" id="btn-cancel-reset">Cancel</button>
+    <button class="btn btn-sm btn-danger" id="btn-confirm-reset">Yes, reset</button>`;
+  btn.parentNode.appendChild(row);
+
+  document.getElementById('btn-cancel-reset').addEventListener('click', () => {
+    row.remove();
+    btn.style.display = '';
+  });
+  document.getElementById('btn-confirm-reset').addEventListener('click', async () => {
+    try {
+      const res = await fetch(`/api/profile/${encodeURIComponent(name)}/reset`, {method: 'POST'});
+      if (!res.ok) { showError('Could not reset profile.'); return; }
+      const data = await res.json();
+      await loadProfiles();
+      renderProfileView(data);
+    } catch (e) {
+      showError('Error resetting profile: ' + e.message);
+    }
+  });
+}
+
+function showDeleteConfirm(name) {
+  const btn = document.getElementById('btn-delete-profile');
+  if (!btn) return;
+  // Replace delete button with inline confirm row
+  btn.style.display = 'none';
+  const row = document.createElement('div');
+  row.className = 'delete-confirm-row';
+  row.innerHTML = `<span>Delete "${esc(name)}"?</span>
+    <button class="btn btn-sm btn-outline" id="btn-cancel-delete">Cancel</button>
+    <button class="btn btn-sm btn-danger" id="btn-confirm-delete">Yes, delete</button>`;
+  btn.parentNode.appendChild(row);
+
+  document.getElementById('btn-cancel-delete').addEventListener('click', () => {
+    row.remove();
+    btn.style.display = '';
+  });
+  document.getElementById('btn-confirm-delete').addEventListener('click', async () => {
+    await executeDeleteProfile(name);
+  });
+}
+
+async function executeDeleteProfile(name) {
+  try {
+    await fetch(`/api/profile/${encodeURIComponent(name)}`, {method: 'DELETE'});
+    S.selectedProfile = null;
+    await loadProfiles();
+    showWelcome();
+  } catch (e) {
+    showError('Error deleting profile: ' + e.message);
+  }
+}
+
+// ── Utility views ─────────────────────────────────────────────────────────────
+function showError(msg, detail) {
+  setMain(`
+    <div class="error-box">
+      <div class="error-title">⚠ Something went wrong</div>
+      <div class="error-msg">${esc(msg)}</div>
+      ${detail ? `<pre class="error-detail">${esc(detail)}</pre>` : ''}
+    </div>`);
+}
+</script>
+</body>
+</html>
